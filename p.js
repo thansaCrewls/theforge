@@ -89,7 +89,8 @@ function processServers(servers) {
     maxPlayers: server.maxPlayers || 16,
     fps: server.fps ? parseFloat(server.fps).toFixed(2) : 'N/A',
     ping: server.ping || 'N/A',
-    joinLink: `https://www.roblox.com/games/${placeId}?_gameInstanceId=${server.id}`
+    webLink: `https://www.roblox.com/games/${placeId}?_gameInstanceId=${server.id}`,
+    appLink: `roblox://placeID=${placeId}&gameInstanceID=${server.id}`
   }));
   
   // Display first 15
@@ -103,10 +104,10 @@ function processServers(servers) {
     console.log(`\n... and ${serverList.length - 15} more servers\n`);
   }
   
-  // Create TXT - HANYA LINK
+  // Create TXT - HANYA LINK ROBLOX APP
   let txtContent = '';
   serverList.forEach(s => {
-    txtContent += s.joinLink + '\n';
+    txtContent += s.appLink + '\n';
   });
   
   window.serverResults = { serverList, txtContent };
@@ -145,9 +146,9 @@ window.downloadFile = (format = 'txt') => {
     content = JSON.stringify(window.serverResults.serverList, null, 2);
     filename += '.json';
   } else if (format === 'csv') {
-    let csv = 'No,Players,Max,FPS,Ping,ServerID,JoinLink\n';
+    let csv = 'No,Players,Max,FPS,Ping,ServerID,AppLink,WebLink\n';
     window.serverResults.serverList.forEach(s => {
-      csv += `${s.no},${s.players},${s.maxPlayers},"${s.fps}","${s.ping}","${s.id}","${s.joinLink}"\n`;
+      csv += `${s.no},${s.players},${s.maxPlayers},"${s.fps}","${s.ping}","${s.id}","${s.appLink}","${s.webLink}"\n`;
     });
     content = csv;
     filename += '.csv';
@@ -162,6 +163,61 @@ window.downloadFile = (format = 'txt') => {
   document.body.removeChild(link);
   
   console.log(`✅ Downloaded: ${filename}`);
+};
+
+window.openServerWithConfirm = (appLink) => {
+  window.location.href = appLink;
+  
+  // Auto-click tombol "Open Roblox Game Client" setelah delay
+  setTimeout(() => {
+    const buttons = document.querySelectorAll('button');
+    const openBtn = Array.from(buttons).find(btn => 
+      btn.textContent.includes('Open Roblox Game Client') || 
+      btn.textContent.includes('Open')
+    );
+    
+    if (openBtn) {
+      console.log('🤖 Auto-clicking Open button...');
+      openBtn.click();
+    }
+  }, 500);
+};
+
+window.openAllServers = () => {
+  if (!window.serverResults) {
+    console.log('❌ No data available');
+    return;
+  }
+  
+  const total = window.serverResults.serverList.length;
+  console.log(`🚀 Opening ${total} server links via Roblox app...\n`);
+  console.log('⚠️  Make sure to click "Open Roblox Game Client" for each one\n');
+  
+  let opened = 0;
+  let delay = 0;
+  
+  window.serverResults.serverList.forEach((server, idx) => {
+    setTimeout(() => {
+      window.openServerWithConfirm(server.appLink);
+      opened++;
+      console.log(`✅ Opened ${opened}/${total} - Click confirm dialog if appears`);
+    }, delay);
+    delay += 3000; // 3 detik delay
+  });
+  
+  console.log(`\n⏳ Will open all ${total} servers over next ${(delay / 1000).toFixed(1)} seconds`);
+};
+
+window.openRandomServer = () => {
+  if (!window.serverResults) {
+    console.log('❌ No data available');
+    return;
+  }
+  
+  const random = window.serverResults.serverList[Math.floor(Math.random() * window.serverResults.serverList.length)];
+  console.log(`🎮 Opening random server: ${random.id}`);
+  console.log('💡 Click "Open Roblox Game Client" button when prompted');
+  window.openServerWithConfirm(random.appLink);
 };
 
 // Start scraping
